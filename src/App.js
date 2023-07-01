@@ -1,56 +1,49 @@
-import React from 'react';
-import logo from './logo.svg';
-import { Counter } from './features/counter/Counter';
-import './App.css';
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { login, logout, selectUser } from "./features/userSlice";
+import "./App.css";
+import HomeScreen from "./screens/HomeScreen";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Login from "./screens/Login";
+import { auth } from "./firebase";
+import Profile from "./screens/Profile";
 
 function App() {
+  //useselector selects value from state
+  const user = useSelector(selectUser);
+  //usedispatch returns a reference to the dispatch function from the Redux store. You may use it to dispatch actions as needed.
+  const dispatch = useDispatch();
+  //to see if user is logged in
+  useEffect(() => {
+    //this fn listens to state change in authentication
+    const unsubscribe = auth.onAuthStateChanged((userAuth) => {
+      if (userAuth) {
+        //if we are logged in it pushes user to store
+        dispatch(
+          login({
+            uid: userAuth.uid,
+            email: userAuth.email,
+          })
+        );
+      } else {
+        //if we are logged out it resets user to null
+        dispatch(logout());
+      }
+    });
+    return unsubscribe;
+  }, [dispatch]);
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <Counter />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <span>
-          <span>Learn </span>
-          <a
-            className="App-link"
-            href="https://reactjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux
-          </a>
-          <span>, </span>
-          <a
-            className="App-link"
-            href="https://redux-toolkit.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Redux Toolkit
-          </a>
-          ,<span> and </span>
-          <a
-            className="App-link"
-            href="https://react-redux.js.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            React Redux
-          </a>
-        </span>
-      </header>
+      <BrowserRouter>
+        {!user ? (
+          <Login />
+        ) : (
+          <Routes>
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/" element={<HomeScreen />} />
+          </Routes>
+        )}
+      </BrowserRouter>
     </div>
   );
 }
